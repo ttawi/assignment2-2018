@@ -5,8 +5,10 @@ import numpy as np
 import tvm
 from . import tvm_op
 
+
 class Node(object):
     """Node in a computation graph."""
+
     def __init__(self):
         """Constructor, new node is indirectly created by Op object call method.
 
@@ -64,6 +66,7 @@ def Variable(name):
 
 class Op(object):
     """Op represents operations performed on nodes."""
+
     def __call__(self):
         """Create a new node and associate the op object with the node.
 
@@ -147,7 +150,7 @@ class AddOp(Op):
     def compute(self, node, input_vals, output_val, compiled_func):
         assert len(input_vals) == 2
         assert input_vals[0].shape == input_vals[1].shape
-        compiled_func(input_vals[0], input_vals[1], output_val)  
+        compiled_func(input_vals[0], input_vals[1], output_val)
 
     def gradient(self, node, output_grad):
         return [output_grad, output_grad]
@@ -171,7 +174,7 @@ class AddByConstOp(Op):
 
     def compute(self, node, input_vals, output_val, compiled_func):
         assert len(input_vals) == 1
-        compiled_func(input_vals[0], output_val)  
+        compiled_func(input_vals[0], output_val)
 
     def gradient(self, node, output_grad):
         return [output_grad]
@@ -181,6 +184,7 @@ class AddByConstOp(Op):
 
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
+
 
 class MulOp(Op):
     def __call__(self, node_A, node_B):
@@ -192,7 +196,7 @@ class MulOp(Op):
     def compute(self, node, input_vals, output_val, compiled_func):
         assert len(input_vals) == 2
         assert input_vals[0].shape == input_vals[1].shape
-        compiled_func(input_vals[0], input_vals[1], output_val)  
+        compiled_func(input_vals[0], input_vals[1], output_val)
 
     def gradient(self, node, output_grad):
         return [node.inputs[1] * output_grad, node.inputs[0] * output_grad]
@@ -204,6 +208,7 @@ class MulOp(Op):
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
 
+
 class MulByConstOp(Op):
     def __call__(self, node_A, const_val):
         new_node = Op.__call__(self)
@@ -214,7 +219,7 @@ class MulByConstOp(Op):
 
     def compute(self, node, input_vals, output_val, compiled_func):
         assert len(input_vals) == 1
-        compiled_func(input_vals[0], output_val)  
+        compiled_func(input_vals[0], output_val)
 
     def gradient(self, node, output_grad):
         return [node.const_attr * output_grad]
@@ -224,6 +229,7 @@ class MulByConstOp(Op):
 
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
+
 
 class MatMulOp(Op):
     def __call__(self, node_A, node_B, trans_A=False, trans_B=False):
@@ -247,21 +253,21 @@ class MatMulOp(Op):
             rhs_grad = matmul_op(
                 node.inputs[0], output_grad, trans_A=True, trans_B=False)
         elif ((node.matmul_attr_trans_A is True) and
-                (node.matmul_attr_trans_B is False)):
+                  (node.matmul_attr_trans_B is False)):
             # if Y=A^T B, then dA=(dY B^T)^T=B dY^T, dB=A^T dY
             lhs_grad = matmul_op(
                 node.inputs[1], output_grad, trans_A=False, trans_B=True)
             rhs_grad = matmul_op(
                 node.inputs[0], output_grad, trans_A=True, trans_B=False)
         elif ((node.matmul_attr_trans_A is False) and
-                (node.matmul_attr_trans_B is True)):
+                  (node.matmul_attr_trans_B is True)):
             # if Y=A B^T, then dA=dY B^T, dB=(A^T dY)^T=dY^T A
             lhs_grad = matmul_op(
                 output_grad, node.inputs[1], trans_A=False, trans_B=True)
             rhs_grad = matmul_op(
                 output_grad, node.inputs[0], trans_A=True, trans_B=False)
         elif ((node.matmul_attr_trans_A is True) and
-                (node.matmul_attr_trans_B is True)):
+                  (node.matmul_attr_trans_B is True)):
             # if Y=A^T B^T, then dA=(dY B^T)^T=B dY^T, dB=(A^T dY)^T=dY^T A
             lhs_grad = matmul_op(
                 node.inputs[1], output_grad, trans_A=False, trans_B=True)
@@ -274,7 +280,7 @@ class MatMulOp(Op):
 
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
-        
+
 
 class PlaceholderOp(Op):
     def __call__(self):
@@ -294,6 +300,7 @@ class PlaceholderOp(Op):
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         return None
 
+
 class ZerosLikeOp(Op):
     def __call__(self, node_A):
         """Creates a node that represents np.zeros(node_A.shape)."""
@@ -305,7 +312,7 @@ class ZerosLikeOp(Op):
     def compute(self, node, input_vals, output_val, compiled_func):
         assert len(input_vals) == 1
         output_val.copyfrom(
-            np.zeros(input_vals[0].shape, dtype = input_vals[0].dtype))
+            np.zeros(input_vals[0].shape, dtype=input_vals[0].dtype))
 
     def gradient(self, node, output_grad):
         return [zeroslike_op(node.inputs[0])]
@@ -329,7 +336,7 @@ class OnesLikeOp(Op):
     def compute(self, node, input_vals, output_val, compiled_func):
         assert len(input_vals) == 1
         output_val.copyfrom(
-            np.ones(input_vals[0].shape, dtype = input_vals[0].dtype))
+            np.ones(input_vals[0].shape, dtype=input_vals[0].dtype))
 
     def gradient(self, node, output_grad):
         return [zeroslike_op(node.inputs[0])]
@@ -364,7 +371,7 @@ class ReduceSumAxisZeroOp(Op):
         e.g. (3,4,5)->(4,5)
         for vector, simpler to do (3,)->(1,)
         """
-        assert(len(input_shapes)==1)
+        assert (len(input_shapes) == 1)
         if len(input_shapes[0]) == 1:
             return (1,)
         return input_shapes[0][1:]
@@ -385,7 +392,7 @@ class BroadcastToOp(Op):
         return new_node
 
     def compute(self, node, input_vals, output_val, compiled_func):
-        assert(len(input_vals)==2)
+        assert (len(input_vals) == 2)
         compiled_func(input_vals[0], output_val)
 
     def gradient(self, node, output_grad):
@@ -398,6 +405,7 @@ class BroadcastToOp(Op):
 
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
+
 
 def softmax_func(y):
     """Numerically stable softmax."""
@@ -431,6 +439,7 @@ class SoftmaxCrossEntropyOp(Op):
 
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
+
 
 class SoftmaxOp(Op):
     def __call__(self, node_A):
@@ -495,6 +504,7 @@ class ReluGradientOp(Op):
     def compiled_func(self, node, input_shapes, tgt, tgt_host):
         """TODO: Your code here"""
 
+
 # Create global singletons of operators.
 add_op = AddOp()
 mul_op = MulOp()
@@ -514,6 +524,7 @@ relu_gradient_op = ReluGradientOp()
 
 class Executor(object):
     """Executor computes values for given set of nodes in computation graph."""
+
     def __init__(self, eval_node_list, ctx=None):
         """
         Parameters
@@ -530,7 +541,7 @@ class Executor(object):
         self.ctx = ctx
         if self.ctx == tvm.cpu(0):
             self.tgt = "llvm"
-            self.tgt_host="llvm"
+            self.tgt_host = "llvm"
         else:
             assert False, "non-CPU context not yet supported"
         self.topo_order = find_topo_sort(self.eval_node_list)
@@ -590,6 +601,7 @@ class Executor(object):
         -------
         A list of values for nodes in eval_node_list. tvm.nd.array or np.ndarray.
         """
+
         def are_feed_shapes_equal(sa, sb):
             if (not isinstance(sa, dict)) or (not isinstance(sb, dict)):
                 return False
@@ -598,8 +610,8 @@ class Executor(object):
 
         node_to_val_map = {}
         for node, value in feed_dict.items():
-            assert isinstance(value, tvm.ndarray.NDArray),\
-                "feed_dict value type not supported"    
+            assert isinstance(value, tvm.ndarray.NDArray), \
+                "feed_dict value type not supported"
             node_to_val_map[node] = value
 
         # collect shapes for all placeholders
@@ -664,6 +676,7 @@ def gradients(output_node, node_list):
     grad_node_list = [node_to_output_grad[node] for node in node_list]
     return grad_node_list
 
+
 ##################
 # Helper Methods #
 ##################
@@ -711,8 +724,8 @@ def broadcast_rule(shape_a, shape_b):
     https://docs.scipy.org/doc/numpy-1.10.0/user/basics.broadcasting.html
     http://eli.thegreenplace.net/2015/broadcasting-arrays-in-numpy/
     """
-    assert(isinstance(shape_a, tuple))
-    assert(isinstance(shape_b, tuple))
+    assert (isinstance(shape_a, tuple))
+    assert (isinstance(shape_b, tuple))
     if len(shape_a) > len(shape_b):
         longer_shape, shorter_shape = shape_a, shape_b
     else:
@@ -725,7 +738,7 @@ def broadcast_rule(shape_a, shape_b):
     output_shape = list(longer_shape)
     for i in xrange(len(output_shape)):
         assert (shorter_shape[i] == longer_shape[i]) \
-            or (shorter_shape[i] == 1) \
-            or (longer_shape[i] == 1)
+               or (shorter_shape[i] == 1) \
+               or (longer_shape[i] == 1)
         output_shape[i] = max(shorter_shape[i], longer_shape[i])
     return tuple(output_shape)

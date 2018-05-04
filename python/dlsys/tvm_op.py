@@ -7,10 +7,10 @@ import topi
 # Global declarations of environment.
 
 # llvm
-tgt_host="llvm"
+tgt_host = "llvm"
 # llvm, cuda, opencl, metal
 # Change it to respective GPU if gpu is enabled Ex: cuda, opencl
-tgt="llvm"
+tgt = "llvm"
 
 
 def make_elemwise_add(shape, tgt, tgt_host, func_name, dtype="float32"):
@@ -26,14 +26,16 @@ def make_elemwise_add(shape, tgt, tgt_host, func_name, dtype="float32"):
 def make_elemwise_mul(shape, tgt, tgt_host, func_name, dtype="float32"):
     """TODO: Your code here"""
 
+
 def make_elemwise_add_by_const(shape, const_k, tgt, tgt_host, func_name,
                                dtype="float32"):
     """TODO: Your code here"""
 
 
 def make_elemwise_mul_by_const(shape, const_k, tgt, tgt_host, func_name,
-                            dtype="float32"):
+                               dtype="float32"):
     """TODO: Your code here"""
+
 
 def make_relu(shape, tgt, tgt_host, func_name, dtype="float32"):
     """TODO: Your code here"""
@@ -55,7 +57,7 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
 
 
 def make_conv2d(shapeX, shapeF, tgt, tgt_host, func_name, dtype="float32"):
-    assert(shapeX[1] == shapeF[1])
+    assert (shapeX[1] == shapeF[1])
     N, C, H, W = shapeX
     M, C, R, S = shapeF
 
@@ -64,8 +66,8 @@ def make_conv2d(shapeX, shapeF, tgt, tgt_host, func_name, dtype="float32"):
     """Hint: go by conv2d definition. Treat stride=1, padding=0 case only."""
     """For a challenge, treat the general case for stride and padding."""
 
-def make_matrix_softmax(shape, tgt, tgt_host, func_name, dtype="float32"):
 
+def make_matrix_softmax(shape, tgt, tgt_host, func_name, dtype="float32"):
     """TODO: Your code here"""
     """Hint: use tvm.reduce_axis, tvm.sum, tvm.max, tvm.exp"""
     """Hint: do not reuse the same reduction axis j."""
@@ -73,6 +75,7 @@ def make_matrix_softmax(shape, tgt, tgt_host, func_name, dtype="float32"):
         e_x = np.exp(x - np.max(x))
         softmax(x)= e_x / e_x.sum()
     """
+
 
 def make_matrix_softmax_cross_entropy(shape, tgt, tgt_host, func_name,
                                       dtype="float32"):
