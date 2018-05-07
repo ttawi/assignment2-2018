@@ -92,10 +92,10 @@ def test_matrix_multiply():
     matrix_mul(arr_x, arr_y, arr_z)
     z = arr_z.asnumpy()
     np.testing.assert_allclose(np.dot(x, np.transpose(y)), z, rtol=1e-5)
-    
+
     shapeX = (500, 1000)
     shapeY = (500, 2000)
-    shapeZ = (1000, 2000)   
+    shapeZ = (1000, 2000)
     x = np.random.uniform(0, 10, size=shapeX).astype(dtype)
     y = np.random.uniform(0, 10, size=shapeY).astype(dtype)
     z = np.zeros(shapeZ).astype(dtype)
@@ -107,10 +107,10 @@ def test_matrix_multiply():
     matrix_mul(arr_x, arr_y, arr_z)
     z = arr_z.asnumpy()
     np.testing.assert_allclose(np.dot(np.transpose(x), y), z, rtol=1e-5)
-    
+
     shapeX = (500, 1000)
     shapeY = (2000, 500)
-    shapeZ = (1000, 2000)   
+    shapeZ = (1000, 2000)
     x = np.random.uniform(0, 10, size=shapeX).astype(dtype)
     y = np.random.uniform(0, 10, size=shapeY).astype(dtype)
     z = np.zeros(shapeZ).astype(dtype)
