@@ -107,12 +107,36 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
                 (A.shape[0], B.shape[1]),
                 lambda i, j: tvm.sum(A[i, Aj] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
                 name="Output")
+            s = tvm.create_schedule(Output.op)
+
+            # Optimize schedule by blocking
+            xo, yo, xi, yi = s[Output].tile(Output.op.axis[0], Output.op.axis[1], x_factor=tile_size,
+                                            y_factor=tile_size)
+            k, = s[Output].op.reduce_axis
+            ko, ki = s[Output].split(k, factor=split_size)
+
+            # Re-order permutation
+            s[Output].reorder(xo, yo, ko, xi, ki, yi)
+            s[Output].vectorize(yi)
         else:
             Aj = tvm.reduce_axis((0, A.shape[1]), "Aj")
             Output = tvm.compute(
                 (A.shape[0], B.shape[0]),
                 lambda i, j: tvm.sum(A[i, Aj] * B[j, Aj], axis=[Aj]),
                 name="Output")
+
+            s = tvm.create_schedule(Output.op)
+
+            # Optimize schedule by blocking
+            xo, yo, xi, yi = s[Output].tile(Output.op.axis[0], Output.op.axis[1], x_factor=tile_size,
+                                            y_factor=tile_size)
+            k, = s[Output].op.reduce_axis
+            ko, ki = s[Output].split(k, factor=split_size)
+
+            # Re-order permutation
+            s[Output].reorder(xo, yo, ko, xi, yi, ki)
+            s[Output].vectorize(ki)
+
     else:
         if not transposeB:
             packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
@@ -125,6 +149,18 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
                 # lambda i, j: tvm.sum(A[Aj, i] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
                 lambda i, j: tvm.sum(packedA[i / tile_size, Aj, i % tile_size] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
                 name="Output")
+
+            s = tvm.create_schedule(Output.op)
+
+            # Optimize schedule by blocking
+            xo, yo, xi, yi = s[Output].tile(Output.op.axis[0], Output.op.axis[1], x_factor=tile_size,
+                                            y_factor=tile_size)
+            k, = s[Output].op.reduce_axis
+            ko, ki = s[Output].split(k, factor=split_size)
+
+            # Re-order permutation
+            s[Output].reorder(xo, yo, ko, ki, xi, yi)
+            s[Output].vectorize(yi)
         else:
             packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
                                   lambda x, y, z: A[y, x * tile_size + z], name="packedA")
@@ -133,16 +169,18 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
                 (A.shape[1], B.shape[0]),
                 lambda i, j: tvm.sum(packedA[i / tile_size, Aj, i % tile_size] * B[j, Aj], axis=[Aj]),
                 name="Output")
-    s = tvm.create_schedule(Output.op)
 
-    # Optimize schedule by blocking
-    xo, yo, xi, yi = s[Output].tile(Output.op.axis[0], Output.op.axis[1], x_factor=tile_size, y_factor=tile_size)
-    k, = s[Output].op.reduce_axis
-    ko, ki = s[Output].split(k, factor=split_size)
+            s = tvm.create_schedule(Output.op)
 
-    # Re-order permutation
-    s[Output].reorder(xo, yo, ko, xi, ki, yi)
-    s[Output].vectorize(yi)
+            # Optimize schedule by blocking
+            xo, yo, xi, yi = s[Output].tile(Output.op.axis[0], Output.op.axis[1], x_factor=tile_size,
+                                            y_factor=tile_size)
+            k, = s[Output].op.reduce_axis
+            ko, ki = s[Output].split(k, factor=split_size)
+
+            # Re-order permutation
+            s[Output].reorder(xo, yo, ko, yi, ki, xi)
+            s[Output].vectorize(xi)
 
     # Parallel
     s[Output].parallel(xo)
