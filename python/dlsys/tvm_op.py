@@ -214,7 +214,7 @@ def make_matrix_softmax_cross_entropy(shape, tgt, tgt_host, func_name,
                          name="output")
     s = tvm.create_schedule([max_res.op, normalized_res.op, exp_res.op, exp_sum.op, label_times_log_softmax.op,
                              summed_error.op, summed_summed_error.op, output.op])
-    print(tvm.lower(s, [A, Label, output], simple_mode=True))
+    # print(tvm.lower(s, [A, Label, output], simple_mode=True))
     f = tvm.build(s, [A, Label, output], tgt, target_host=tgt_host, name=func_name)
     return f
 
