@@ -95,17 +95,18 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
 
     A = tvm.placeholder(shapeA, dtype=dtype, name="A")
     B = tvm.placeholder(shapeB, dtype=dtype, name="B")
-    packedA = None
-    packedB = None
+    # packedA = None
+    # packedB = None
     if not transposeA:
         if not transposeB:
             # optimize the structure of B
-            packedB = tvm.compute((shapeB[1] / tile_size, shapeB[0], tile_size),
-                                  lambda x, y, z: B[y, x * tile_size + z], name="packedB")
+            # packedB = tvm.compute((shapeB[1] / tile_size, shapeB[0], tile_size),
+            #                       lambda x, y, z: B[y, x * tile_size + z], name="packedB")
             Aj = tvm.reduce_axis((0, A.shape[1]), "Aj")
             Output = tvm.compute(
                 (A.shape[0], B.shape[1]),
-                lambda i, j: tvm.sum(A[i, Aj] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
+                # lambda i, j: tvm.sum(A[i, Aj] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
+                lambda i, j: tvm.sum(A[i, Aj] * B[Aj, j], axis=[Aj]),
                 name="Output")
             s = tvm.create_schedule(Output.op)
 
@@ -135,19 +136,20 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
 
             # Re-order permutation
             s[Output].reorder(xo, yo, ko, xi, yi, ki)
-            s[Output].vectorize(ki)
 
     else:
         if not transposeB:
-            packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
-                                  lambda x, y, z: A[y, x * tile_size + z], name="packedA")
-            packedB = tvm.compute((shapeB[1] / tile_size, shapeB[0], tile_size),
-                                  lambda x, y, z: B[y, x * tile_size + z], name="packedB")
+            # packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
+            #                       lambda x, y, z: A[y, x * tile_size + z], name="packedA")
+            # packedB = tvm.compute((shapeB[1] / tile_size, shapeB[0], tile_size),
+            #                       lambda x, y, z: B[y, x * tile_size + z], name="packedB")
             Aj = tvm.reduce_axis((0, A.shape[0]), "Aj")  # Ai in ori
             Output = tvm.compute(
                 (A.shape[1], B.shape[1]),
                 # lambda i, j: tvm.sum(A[Aj, i] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
-                lambda i, j: tvm.sum(packedA[i / tile_size, Aj, i % tile_size] * packedB[j / tile_size, Aj, j % tile_size], axis=[Aj]),
+                # lambda i, j: tvm.sum(packedA[i / tile_size, Aj, i % tile_size] * packedB[j / tile_size, Aj,
+                # j % tile_size], axis=[Aj]),
+                lambda i, j: tvm.sum(A[Aj, i] * B[Aj, j], axis=[Aj]),
                 name="Output")
 
             s = tvm.create_schedule(Output.op)
@@ -162,12 +164,13 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
             s[Output].reorder(xo, yo, ko, ki, xi, yi)
             s[Output].vectorize(yi)
         else:
-            packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
-                                  lambda x, y, z: A[y, x * tile_size + z], name="packedA")
+            # packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
+            #                       lambda x, y, z: A[y, x * tile_size + z], name="packedA")
             Aj = tvm.reduce_axis((0, A.shape[0]), "Aj")  # Ai in ori
             Output = tvm.compute(
                 (A.shape[1], B.shape[0]),
-                lambda i, j: tvm.sum(packedA[i / tile_size, Aj, i % tile_size] * B[j, Aj], axis=[Aj]),
+                # lambda i, j: tvm.sum(packedA[i / tile_size, Aj, i % tile_size] * B[j, Aj], axis=[Aj]),
+                lambda i, j: tvm.sum(A[Aj, i] * B[j, Aj], axis=[Aj]),
                 name="Output")
 
             s = tvm.create_schedule(Output.op)
@@ -186,14 +189,14 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
     s[Output].parallel(xo)
 
     # Array Packing
-    if packedA is not None:
-        x, y, z = s[packedA].op.axis
-        s[packedA].vectorize(z)
-        s[packedA].parallel(x)
-    if packedB is not None:
-        x, y, z = s[packedB].op.axis
-        s[packedB].vectorize(z)
-        s[packedB].parallel(x)
+    # if packedA is not None:
+    #     x, y, z = s[packedA].op.axis
+    #     s[packedA].vectorize(z)
+    #     s[packedA].parallel(x)
+    # if packedB is not None:
+    #     x, y, z = s[packedB].op.axis
+    #     s[packedB].vectorize(z)
+    #     s[packedB].parallel(x)
 
     # print (tvm.lower(s, [A, B, Output], simple_mode=True))
     f = tvm.build(s, [A, B, Output], tgt, target_host=tgt_host, name=func_name)
