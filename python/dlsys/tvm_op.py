@@ -161,8 +161,7 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
             # s[Output].reorder(xo, yo, ko, xi, yi, ki)
             # s[Output].vectorize(ki)
             s[CC].reorder(ko, xc, yc, ki)
-            s[CC].unroll(yc)
-            s[CC].vectorize(ki)
+            s[CC].unroll(ki)
 
     else:
         if not transposeB:
@@ -199,7 +198,7 @@ def make_matrix_mul(shapeA, transposeA, shapeB, transposeB, tgt, tgt_host,
             # s[Output].reorder(xo, yo, ko, ki, xi, yi)
             # s[Output].vectorize(yi)
             s[CC].reorder(ko, ki, xc, yc)
-            s[CC].unroll(xc)
+            s[CC].unroll(ki)
             s[CC].vectorize(yc)
         else:
             packedA = tvm.compute((shapeA[1] / tile_size, shapeA[0], tile_size),
